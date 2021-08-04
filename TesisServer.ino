@@ -104,7 +104,9 @@ void LoRaData(){
   hr.toCharArray(hrC,hr.length()+1);
   tempF=atof(tempC);
   spo2F=atof(spo2C);
-  spo2F=atof(hrC);
+  hrF=atof(hrC);
+String a= "info: "+ String(tempF) + " " + String(spo2F) + " " +String(hrF);
+Serial.println(a);
 }
 
 void cbk(int packetSize) {
@@ -124,8 +126,9 @@ void setup() {
   delay(1500);
   Heltec.display->clear();
   Heltec.display->drawString(0, 10, "Si es primera vez");
-  Heltec.display->drawString(0, 10, "Para Configurar el Wi-fi: Ingrese a la Red:");
-  Heltec.display->drawString(0, 20, "Covid-Monitor-Server");
+  Heltec.display->drawString(0, 20, "Para Configurar el Wi-fi:");
+  Heltec.display->drawString(0, 30, "Ingrese a la Red:");
+  Heltec.display->drawString(0, 40, "Covid-Monitor-Server");
   Heltec.display->display();
   wifiManager.autoConnect("Covid-Monitor-Server");
  while(!Ping.ping("www.google.com",3))
@@ -140,12 +143,13 @@ void setup() {
   }
     connectFirebase();
   Heltec.display->clear();
-  Heltec.display->drawString(0, 0, "LoRa Iniciado y Wi-fi Exitosamente!");
+  Heltec.display->drawString(0, 0, "LoRa Iniciado");
+  Heltec.display->drawString(0,10, "Wi-fi Exitosamente!");
   Heltec.display->display();
   delay(2000);
   Heltec.display->clear();
-  Heltec.display->drawString(0, 0, "ESTADO LORA: OK");
-  Heltec.display->drawString(0, 10, "ESTADO WIFI: OK");
+  Heltec.display->drawString(0, 0, "ESTADO LoRa: OK");
+  Heltec.display->drawString(0, 10, "ESTADO WI-FI: OK");
   
    
   Heltec.display->display();
