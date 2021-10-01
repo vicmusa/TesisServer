@@ -39,9 +39,10 @@ PubSubClient client(net);
 String packSize = "--";
 String packet;
 String path = "/Sensores";
-int pos1,pos2,pos3;
-String temp,spo2,hr,ID,nodo;
+int pos1,pos2,pos3,pos4;
+String temp,spo2,hr,ID,nodo,flag;
 float tempF,spo2F,hrF;
+bool flagB;
 char tempC[8],spo2C[8],hrC[8];
 
 // NTP Variables
@@ -69,13 +70,25 @@ void connectFirebase(){
 
 void sendFirebase() {
   epochTime = get_Time();
+  json.clear();
   String nodo = path + "/"+ID+"/";
   String nodo1 = "/Historicos/"+ID+"/"+String(epochTime)+"/";
+
+  if(!flagB)
+  {
+    json.add("flag",flagB);
+    Firebase.updateNode(firebaseData,nodo,json);
+  }
+  else{
+    
   json.add("spo2", spo2F);
   json.add("hr", hrF);
-  json.add("temp", tempF);   
+  json.add("temp", tempF);
+  Firebase.updateNode(firebaseData,nodo1,json);
+  json.add("flag",flagB);   
   Firebase.updateNode(firebaseData,nodo,json);
-  Firebase.updateNode(firebaseData,nodo1,json);            
+  }
+              
 }
 
 void logo(){
@@ -89,15 +102,28 @@ void LoRaData(){
   hr="";
   spo2="";
   ID="";
+  flag="";
+  if(packet.indexOf("!") == 0)
+  {
+    int posID = packet.indexOf("$");
+    flag = packet.substring(0,posID);
+    ID = packet.substring(posID+1,packet.length());
+    flagB = bool(flag);
+    Serial.println(flag + " " + ID);
+    
+  }
+  else{
+    
+  
   pos1=packet.indexOf("#");
   pos2=packet.indexOf("$");
   pos3=packet.indexOf("/");
+  pos4=packet.indexOf("!");
   temp=packet.substring(0,pos1);
   hr=packet.substring(pos1+1,pos2);
   spo2=packet.substring(pos2+1,pos3);
-  ID=packet.substring(pos3+1,packet.length());
-
-
+  ID=packet.substring(pos3+1,pos4);
+  flag =packet.substring(pos4+1,packet.length());
   // Convertir String a Float
   temp.toCharArray(tempC,temp.length()+1);
   spo2.toCharArray(spo2C,spo2.length()+1);
@@ -105,8 +131,10 @@ void LoRaData(){
   tempF=atof(tempC);
   spo2F=atof(spo2C);
   hrF=atof(hrC);
+  flagB = bool(flag);
 String a= "info: "+ String(tempF) + " " + String(spo2F) + " " +String(hrF);
 Serial.println(a);
+  }
 }
 
 void cbk(int packetSize) {
