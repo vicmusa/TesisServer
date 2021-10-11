@@ -40,10 +40,12 @@ String packSize = "--";
 String packet;
 String path = "/Sensores";
 int pos1,pos2,pos3,pos4;
+unsigned long checkwifi;
 String temp,spo2,hr,ID,nodo,flag;
-float tempF,spo2F,hrF;
+float tempF,spo2F,hrF,flagF;
+int flagIN;
 bool flagB;
-char tempC[8],spo2C[8],hrC[8];
+char tempC[8],spo2C[8],hrC[8], flagC[8];
 
 // NTP Variables
 WiFiUDP ntpUDP;
@@ -76,7 +78,7 @@ void sendFirebase() {
 
   if(!flagB)
   {
-    json.add("flag",flagB);
+    json.add("flag",flagIN);
     Firebase.updateNode(firebaseData,nodo,json);
   }
   else{
@@ -85,7 +87,7 @@ void sendFirebase() {
   json.add("hr", hrF);
   json.add("temp", tempF);
   Firebase.updateNode(firebaseData,nodo1,json);
-  json.add("flag",flagB);   
+  json.add("flag",flagIN);   
   Firebase.updateNode(firebaseData,nodo,json);
   }
               
@@ -103,12 +105,17 @@ void LoRaData(){
   spo2="";
   ID="";
   flag="";
+  Serial.println(String(packet));
   if(packet.indexOf("!") == 0)
   {
+    
     int posID = packet.indexOf("$");
-    flag = packet.substring(0,posID);
+    flag = packet.substring(1,posID);
     ID = packet.substring(posID+1,packet.length());
-    flagB = bool(flag);
+    flagB = false;
+    flag.toCharArray(tempC,temp.length()+1);
+    flagF = atof(flagC);
+    flagIN = int(flagF);
     Serial.println(flag + " " + ID);
     
   }
@@ -125,12 +132,16 @@ void LoRaData(){
   ID=packet.substring(pos3+1,pos4);
   flag =packet.substring(pos4+1,packet.length());
   // Convertir String a Float
+ 
   temp.toCharArray(tempC,temp.length()+1);
   spo2.toCharArray(spo2C,spo2.length()+1);
   hr.toCharArray(hrC,hr.length()+1);
   tempF=atof(tempC);
   spo2F=atof(spo2C);
   hrF=atof(hrC);
+  flag.toCharArray(tempC,temp.length()+1);
+  flagF = atof(flagC);
+  flagIN = int(flagF);
   flagB = bool(flag);
 String a= "info: "+ String(tempF) + " " + String(spo2F) + " " +String(hrF);
 Serial.println(a);
@@ -169,7 +180,8 @@ void setup() {
     WiFi.disconnect();
     wifiManager.autoConnect("Covid-Monitor-Server");
   }
-    connectFirebase();
+  checkwifi = millis();
+  connectFirebase();
   Heltec.display->clear();
   Heltec.display->drawString(0, 0, "LoRa Iniciado");
   Heltec.display->drawString(0,10, "Wi-fi Exitosamente!");
@@ -187,6 +199,30 @@ void setup() {
 }
 
 void loop() {
+  if(millis()-checkwifi > 180000)
+  {
+    int val = 0;
+     while(!Ping.ping("www.google.com",3))
+  {
+    val = 1;
+    Heltec.display->clear();
+    Heltec.display->drawString(0, 0, "NO HAY CONEXION DE RED");
+    Heltec.display->drawString(0, 10, "PRUEBE OTRA RED");
+    wifiManager.resetSettings();
+    Heltec.display->display();
+    WiFi.disconnect();
+    wifiManager.autoConnect("Covid-Monitor-Server");
+  }
+  if(val   ==1)
+  {
+    val = 0;
+    connectFirebase();
+  }
+  checkwifi = millis();
+  Heltec.display->drawString(0, 0, "ESTADO LoRa: OK");
+  Heltec.display->drawString(0, 10, "ESTADO WI-FI: OK");
+  Heltec.display->display();
+  }
   int packetSize = LoRa.parsePacket();
   if (packetSize) { 
     cbk(packetSize); 
